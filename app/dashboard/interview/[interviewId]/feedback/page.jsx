@@ -146,15 +146,15 @@ export default function Feedback({ params }) {
 
             {/* Questions Feedback */}
             <div className="space-y-6">
-                {answers.map((answer, index) => (
-                    <Card key={index} className="border-l-4 border-blue-500">
+                {answers.map((answer, answerIndex) => (
+                    <Card key={`answer-${answer.id || answerIndex}`} className="border-l-4 border-blue-500">
                         <CardContent className="pt-6">
                             <div className="space-y-4">
                                 {/* Question Header */}
                                 <div className="flex items-start justify-between">
                                     <div className="space-y-1">
                                         <h3 className="text-lg font-medium text-gray-900">
-                                            Question {index + 1}
+                                            Question {answerIndex + 1}
                                             {answer.isCodingQuestion && (
                                                 <span className="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
                                                     Coding Question
@@ -422,18 +422,18 @@ export default function Feedback({ params }) {
                                                         }));
                                                     }
                                                     
-                                                    return testCases.map((testCase, i) => {
+                                                    return testCases.map((testCase, testCaseIndex) => {
                                                         // Find matching user result for this test case
-                                                        const userResult = userResults[i] || {
+                                                        const userResult = userResults[testCaseIndex] || {
                                                             passed: false,
                                                             output: "No output available"
                                                         };
                                                         
                                                         return (
-                                                            <div key={i} className={`p-4 rounded-lg border-l-4 ${userResult.passed ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
+                                                            <div key={`test-case-${testCaseIndex}`} className={`p-4 rounded-lg border-l-4 ${userResult.passed ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
                                                                 <div className="flex items-center gap-2 mb-2">
                                                                     <span className="text-sm font-medium text-gray-700">
-                                                                        Test Case {i + 1}
+                                                                        Test Case {testCaseIndex + 1}
                                                                     </span>
                                                                     {userResult.passed ? (
                                                                         <div className="flex items-center gap-1">

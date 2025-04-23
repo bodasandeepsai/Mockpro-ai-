@@ -42,13 +42,18 @@ const safetySettings = [
   },
 ];
 
+// Simple caching mechanism for API responses
+const responseCache = new Map();
+const MAX_CACHE_SIZE = 20; // Limit cache size to avoid memory issues
+
 // Try multiple models in order of preference
 let chatSession;
 
 // Create a promise with timeout to prevent hanging on API calls
 const withTimeout = (promise, timeoutMs) => {
   const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
+      clearTimeout(timeoutId); // Clean up resources
       reject(new Error(`Operation timed out after ${timeoutMs}ms`));
     }, timeoutMs);
   });
@@ -63,8 +68,7 @@ const withRetry = async (fn, maxRetries = 3, delay = 2000, timeoutMs = 30000) =>
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       // Use progressively longer timeouts for retries
-      const currentTimeout = timeoutMs * attempt;
-      console.log(`Attempt ${attempt}/${maxRetries} with timeout ${currentTimeout}ms`);
+      const currentTimeout = timeoutMs * Math.min(attempt, 2); // Scale timeout but don't make it too long
       
       return await withTimeout(fn(), currentTimeout);
     } catch (error) {
@@ -72,8 +76,8 @@ const withRetry = async (fn, maxRetries = 3, delay = 2000, timeoutMs = 30000) =>
       console.error(`Attempt ${attempt} failed:`, error.message);
       
       if (attempt < maxRetries) {
-        // Wait before retrying, with exponential backoff
-        const backoffDelay = delay * Math.pow(2, attempt - 1);
+        // Use exponential backoff, but cap at a reasonable delay
+        const backoffDelay = Math.min(delay * Math.pow(1.5, attempt - 1), 10000);
         console.log(`Retrying in ${backoffDelay}ms...`);
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
       }
@@ -84,9 +88,9 @@ const withRetry = async (fn, maxRetries = 3, delay = 2000, timeoutMs = 30000) =>
 };
 
 try {
-  // First try gemini-1.5-flash
+  // First try gemini-1.5-flash for better performance
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-1.5-flash", // Faster model
   });
   
   chatSession = model.startChat({
@@ -126,6 +130,27 @@ try {
   }
 }
 
+// Helper to create a cache key from input parameters
+const createCacheKey = (jobPosition, jobDesc, jobExperience) => {
+  // Create a stable key by trimming and normalizing the inputs
+  const posKey = jobPosition?.toLowerCase().trim().substring(0, 30) || '';
+  const expKey = jobExperience?.toString().trim().substring(0, 10) || '';
+  // Use only the first part of the job description to keep the key size reasonable
+  const descKey = jobDesc?.toLowerCase().trim().substring(0, 50) || ''; 
+  
+  return `${posKey}:${descKey}:${expKey}`;
+};
+
+// Helper to manage the cache size
+const addToCache = (key, value) => {
+  // If cache is full, remove oldest entry
+  if (responseCache.size >= MAX_CACHE_SIZE) {
+    const oldestKey = responseCache.keys().next().value;
+    responseCache.delete(oldestKey);
+  }
+  responseCache.set(key, value);
+};
+
 /**
  * Generates interview questions for any job role based on position, description, and experience.
  * Handles both technical and non-technical roles appropriately.
@@ -147,6 +172,13 @@ const generateInterviewQuestion = async (jobPosition, jobDesc, jobExperience) =>
 
   // Default experience to "entry level" if not provided
   const experience = jobExperience || "entry level";
+  
+  // Check if we have a cached response
+  const cacheKey = createCacheKey(jobPosition, jobDesc, jobExperience);
+  if (responseCache.has(cacheKey)) {
+    console.log("Using cached interview question");
+    return responseCache.get(cacheKey);
+  }
   
   // Determine if the role is technical or non-technical by checking both job position and description
   const technicalKeywords = [
@@ -239,13 +271,19 @@ const generateInterviewQuestion = async (jobPosition, jobDesc, jobExperience) =>
     try {
       // First attempt: Clean and parse as is
       let cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
-      return JSON.parse(cleanText);
+      const parsed = JSON.parse(cleanText);
+      // Cache the successful result
+      addToCache(cacheKey, parsed);
+      return parsed;
     } catch (firstParseError) {
       try {
         // Second attempt: Try to extract JSON object from text
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          return JSON.parse(jsonMatch[0]);
+          const parsed = JSON.parse(jsonMatch[0]);
+          // Cache the successful result
+          addToCache(cacheKey, parsed);
+          return parsed;
         }
         throw new Error("No JSON object found in response");
       } catch (secondParseError) {
