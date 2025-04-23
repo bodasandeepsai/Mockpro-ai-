@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MockPro-AI: Capstone Presentation</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #EEF2FF;
+            --secondary: #10B981;
+            --dark: #1F2937;
+            --light: #F9FAFB;
+            --gray: #6B7280;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: var(--light);
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .slide {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            overflow: hidden;
+            page-break-after: always;
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .slide-header {
+            background: linear-gradient(135deg, var(--primary), #818CF8);
+            color: white;
+            padding: 20px 30px;
+        }
+        
+        .slide-content {
+            padding: 30px;
+            flex: 1;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            font-weight: 700;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-top: 0;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 10px;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+            color: var(--dark);
+            margin-bottom: 15px;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        ul, ol {
+            margin-bottom: 20px;
+            padding-left: 25px;
+        }
+        
+        li {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .feature-card {
+            background-color: var(--primary-light);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .feature-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+        
+        .two-column {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .column {
+            flex: 1;
+        }
+        
+        .tech-pill {
+            display: inline-block;
+            background-color: var(--primary-light);
+            color: var(--primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .challenge-card {
+            background-color: #FEF2F2;
+            border-left: 4px solid #EF4444;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .solution-card {
+            background-color: #ECFDF5;
+            border-left: 4px solid #10B981;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 4px 4px 0;
+            margin-left: 20px;
+        }
+        
+        .challenge-title {
+            font-weight: 600;
+            color: #EF4444;
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+        
+        .solution-title {
+            font-weight: 600;
+            color: #10B981;
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+        
+        .architecture-diagram {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px dashed var(--gray);
+            margin: 20px 0;
+        }
+        
+        .journey-step {
+            display: flex;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .step-number {
+            background-color: var(--primary);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .step-content {
+            flex: 1;
+        }
+        
+        .highlight-box {
+            background-color: #FFF7ED;
+            border: 1px solid #FDBA74;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        @media print {
+            .slide {
+                box-shadow: none;
+                border: 1px solid #eee;
+            }
+            
+            body {
+                background-color: white;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Slide -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>MockPro-AI</h1>
+                <p style="font-size: 1.5rem; margin-top: 5px;">AI-Powered Interview Simulator</p>
+            </div>
+            <div class="slide-content" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                <h2 style="border: none; font-size: 2.2rem;">Capstone Project Presentation</h2>
+                <p style="margin-top: 50px; font-size: 1.3rem;">
+                    By: [Your Name/Team]<br>
+                    Date: April 24, 2025
+                </p>
+            </div>
+        </div>
+
+        <!-- Project Overview -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 style="color: white; border: none;">Project Overview</h2>
+            </div>
+            <div class="slide-content">
+                <p>MockPro-AI is an intelligent interview preparation platform that:</p>
+                <ul>
+                    <li>Simulates realistic job interviews using Gemini AI</li>
+                    <li>Generates tailored interview questions based on job positions</li>
+                    <li>Provides real-time feedback and performance analysis</li>
+                    <li>Supports both technical and non-technical roles</li>
+                    <li>Helps candidates improve their interviewing skills through practice</li>
+                </ul>
+                
+                <div class="highlight-box">
+                    <p style="margin: 0;"><strong>💡 Key Insight:</strong> By combining AI-generated questions with real-time feedback, MockPro-AI creates a personalized interview preparation experience that adapts to each candidate's specific job requirements and experience level.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Problem Statement -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 style="color: white; border: none;">Problem Statement</h2>
+            </div>
+            <div class="slide-content">
+                <div class="challenge-card">
+                    <h3 class="challenge-title">Job interviews are stressful and unpredictable</h3>
+                    <p>Candidates often feel unprepared and anxious, leading to poor performance even when they have the right skills.</p>
+                </div>
+                
+                <div class="challenge-card">
+                    <h3 class="challenge-title">Lack of personalized preparation options</h3>
+                    <p>Generic interview prep doesn't account for specific job roles, industries, or experience levels.</p>
+                </div>
+                
+                <div class="challenge-card">
+                    <h3 class="challenge-title">Technical interviews require specialized practice</h3>
+                    <p>Coding questions and technical assessments need domain-specific preparation that's hard to find.</p>
+                </div>
+                
+                <div class="challenge-card">
+                    <h3 class="challenge-title">High cost of interview coaching</h3>
+                    <p>Professional interview coaches charge $100+ per hour, making quality preparation inaccessible to many.</p>
+                </div>
+                
+                <div class="challenge-card">
+                    <h3 class="challenge-title">Difficulty getting objective feedback</h3>
+                    <p>Friends and family may not provide honest, constructive criticism on interview performance.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Solution -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 style="color: white; border: none;">Solution: MockPro-AI</h2>
+            </div>
+            <div class="slide-content">
+                <p>An accessible, AI-powered interview simulator that:</p>
+                
+                <div class="feature-card">
+                    <h3 class="feature-title">Personalized Question Generation</h3>
+                    <p>Creates custom interview questions based on job description, position, and experience level.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 class="feature-title">Technical & Non-Technical Support</h3>
+                    <p>Intelligently determines role type and generates appropriate questions (behavioral or coding).</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 class="feature-title">Real-time Interaction</h3>
+                    <p>Uses speech recognition for natural answering with real-time transcription.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 class="feature-title">Detailed Feedback System</h3>
+                    <p>Provides comprehensive performance analysis with improvement suggestions.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 class="feature-title">Progress Tracking</h3>
+                    <p>Helps users monitor performance improvements over time.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 style="color: white; border: none;">Key Features</h2>
+            </div>
+            <div class="slide-content">
+                <div class="two-column">
+                    <div class="column">
+                        <h3>Personalized Interview Generation</h3>
+                        <ul>
+                            <li>Tailored to job position, description, and experience level</li>
+                            <li>Adaptive difficulty based on experience</li>
+                        </ul>
+                        
+                        <h3>Real-time Interaction</h3>
+                        <ul>
+                            <li>Speech recognition for natural answering</li>
+                            <li>Real-time transcript display</li>
+                            <li>Manual input option for accessibility</li>
+                        </ul>
+                        
+                        <h3>Progress Tracking</h3>
+                        <ul>
+                            <li>Interview history and performance trends</li>
+                            <li>Areas of improvement identification</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="column">
+                        <h3>Comprehensive Question Types</h3>
+                        <ul>
+                            <li>Technical coding questions with test cases</li>
+                            <li>Behavioral questions with assessment criteria</li>
+                            <li>Role-specific knowledge questions</li>
+                        </ul>
+                        
+                        <h3>Detailed Feedback System</h3>
+                        <ul>
+                            <li>Question-by-question analysis</li>
+                            <li>Overall performance rating</li>
+                            <li>Comparative assessment against ideal answers</li>
+                            <li>Coding solution evaluation with test cases</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Architecture -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 style="color: white; border: none;">Technical Architecture</h2>
+            </div>
+            <div class="slide-content">
+                <div class="two-column">
+                    <div class="column">
+                        <h3>Frontend</h3>
+                        <div>
+                            <span class="tech-pill">Next.js</span>
+                            <span class="tech-pill">React</span>
+                            <span class="tech-pill">Tailwind CSS</span>
+                            <span class="tech-pill">Monaco Editor</span>
+                        </div>
+                        <ul>
+                            <li>Modern React with hooks and context</li>
+                            <li>Responsive UI with Tailwind CSS</li>
+                            <li>Monaco Editor for coding questions</li>
+                        </ul>
+                        
+                        <h3>Backend & Data</h3>
+                        <div>
+                            <span class="tech-pill">Drizzle ORM</span>
+                            <span class="tech-pill">Neon Database</span>
+                            <span class="tech-pill">PostgreSQL</span>
+                            <span class="tech-pill">Clerk Auth</span>
+                        </div>
+                        <ul>
+                            <li>Drizzle ORM with Neon Database</li>
+                            <li>Next.js API routes for backend logic</li>
+                            <li>Clerk for user authentication</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="column">
+                        <h3>AI Integration</h3>
+                        <div>
+                            <span class="tech-pill">Gemini AI</span>
+                            <span class="tech-pill">React Hook Speech-to-Text</span>
+                            <span class="tech-pill">React Webcam</span>
+                        </div>
+                        <ul>
+                            <li>Google's Gemini AI for question generation</li>
+                            <li>Speech recognition for answer capture</li>
+                            <li>Video integration for realistic interview setting</li>
+                        </ul>
+                        
+                        <div class="architecture-diagram">
+                            <p style="margin: 0; color: var(--gray);">[Architecture Diagram Placeholder]</p>
+                            <p style="margin-top: 10px;">User → Frontend (Next.js) → API Routes → AI Integration (Gemini) → Database (PostgreSQL)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Core Components -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 style="color: white; border: none;">Core Components</h2>
+            </div>
+            <div class="slide-content">
+                <div class="feature-card">
+                    <h3 class="feature-title">GemeniAIModal.js</h3>
+                    <p>Heart of the question generation system:</p>
+                    <ul>
+                        <li>Intelligent role detection (technical vs non-technical)</li>
+                        <li>Handles both coding and behavioral questions</li>
+                        <li>Error handling and fallback mechanisms</li>
+                        <li>API timeout management with retries</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 class="feature-title">Interview Flow Components</h3>
+                    <ul>
+                        <li>Job detail collection and processing</li>
+                        <li>Dynamic question generation and sequencing</li>
+                        <li>Answer recording with speech recognition</li>
+                        <li>Real-time feedback generation</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 class="feature-title">Feedback System</h3>
+                    <ul>
+                        <li>Performance metrics calculation (5-star rating system)</li>
+                        <li>Comparative analysis against ideal answers</li>
+                        <li>Test case validation for coding questions</li>
+                        <li>Detailed improvement suggestions</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Innovations -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 style="color: white; border: none;">Technical Innovations</h2>
+            </div>
+            <div class="slide-content">
+                <div class="two-column">
+                    <div class="column">
+                        <div class="feature-card">
+                            <h3 class="feature-title">Adaptive Question Generation</h3>
+                            <p>Analyzes job descriptions to determine technical requirements and generates appropriate questions based on role complexity.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3 class="feature-title">Robust Error Handling</h3>
+                            <p>Implements timeout controls for API calls, fallback questions when API fails, and graceful degradation for unreliable connections.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="column">
+                        <div class="feature-card">
+                            <h3 class="feature-title">Real-time Speech Processing</h3>
+                            <p>Features continuous speech capture and transcription with text display during speech and manual input option for accessibility.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3 class="feature-title">Code Execution and Testing</h3>
+                            <p>Creates a safe execution environment for user code with test case validation and performance analysis.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Implementation Challenges & Solutions -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 style="color: white; border: none;">Implementation Challenges & Solutions</h2>
+            </div>
+            <div class="slide-content">
+                <div class="challenge-card">
+                    <h3 class="challenge-title">Challenge: API Reliability</h3>
+                    <p>Gemini API would occasionally timeout or hit rate limits during question generation.</p>
+                </div>
+                <div class="solution-card">
+                    <h3 class="solution-title">Solution:</h3>
+                    <p>Implemented retry mechanisms with exponential backoff, timeout controls, and pre-generated fallback content for seamless user experience.</p>
+                </div>
+                
+                <div class="challenge-card">
+                    <h3 class="challenge-title">Challenge: Speech Recognition Accuracy</h3>
+                    <p>Speech recognition quality varied based on accents, background noise, and network conditions.</p>
+                </div>
+                <div class="solution-card">
+                    <h3 class="solution-title">Solution:</h3>
+                    <p>Added real-time text display during speech for user confidence and a manual input option as a fallback.</p>
+                </div>
+                
+                <div class="challenge-card">
+                    <h3 class="challenge-title">Challenge: Technical vs Non-Technical Question Generation</h3>
+                    <p>Different job roles required entirely different question types and evaluation criteria.</p>
+                </div>
+                <div class="solution-card">
+                    <h3 class="solution-title">Solution:</h3>
+                    <p>Developed an intelligent role detection algorithm using keyword analysis in job titles and descriptions.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Journey -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 style="color: white; border: none;">User Journey</h2>
+            </div>
+            <div class="slide-content">
+                <div class="journey-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3 style="margin: 0;">Registration & Profile Setup</h3>
+                        <p>Create account and profile, define career goals and job interests</p>
+                    </div>
+                </div>
+                
+                <div class="journey-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3 style="margin: 0;">Interview Configuration</h3>
+                        <p>Enter job position, description, and experience level to customize the interview</p>
+                    </div>
+                </div>
+                
+                <div class="journey-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3 style="margin: 0;">Interview Experience</h3>
+                        <p>Answer technical and behavioral questions using speech recognition or text input</p>
+                    </div>
+                </div>
+                
+                <div class="journey-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3 style="margin: 0;">Feedback Review</h3>
+                        <p>Receive detailed performance analysis with strengths and areas for improvement</p>
+                    </div>
+                </div>
+                
+                <div class="journey-step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h3 style="margin: 0;">Progress Tracking</h3>
+                        <p>Review past interviews and track improvement over time</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Future Enhancements -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 style="color: white; border: none;">Future Enhancements</h2>
+            </div>
+            <div class="slide-content">
+                <div class="two-column">
+                    <div class="column">
+                        <div class="feature-card">
+                            <h3 class="feature-title">Advanced AI Features</h3>
+                            <ul>
+                                <li>Multi-turn conversations</li>
+                                <li>Video analysis for body language feedback</li>
+                                <li>Voice tone and confidence assessment</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3 class="feature-title">Expanded Question Database</h3>
+                            <ul>
+                                <li>Industry-specific question libraries</li>
+                                <li>Company-specific question patterns</li>
+                                <li>Custom question upload for instructors</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="column">
+                        <div class="feature-card">
+                            <h3 class="feature-title">Mock Interview Marketplace</h3>
+                            <ul>
+                                <li>Expert-created interview templates</li>
+                                <li>Peer review system</li>
+                                <li>Interview difficulty progression paths</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3 class="feature-title">Integration Capabilities</h3>
+                            <ul>
+                                <li>ATS integration for real job applications</li>
+                                <li>LinkedIn profile analysis</li>
+                                <li>Resume-to-interview question mapping</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conclusion -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 style="color: white; border: none;">Conclusion</h2>
+            </div>
+            <div class="slide-content">
+                <p>MockPro-AI represents a significant advancement in accessible interview preparation by:</p>
+                <ul>
+                    <li>Leveraging AI to create personalized interview experiences</li>
+                    <li>Supporting both technical and non-technical career paths</li>
+                    <li>Providing immediate, actionable feedback</li>
+                    <li>Creating a low-pressure environment for skill development</li>
+                </ul>
+                
+                <div class="highlight-box">
+                    <p style="margin: 0;"><strong>Key Impact:</strong> Through this project, we've demonstrated how AI can make quality interview preparation accessible to everyone, regardless of their background or resources.</p>
+                </div>
+                
+                <div style="margin-top: 40px; text-align: center;">
+                    <h3>Thank You!</h3>
+                    <p style="margin-bottom: 5px;">We welcome your questions and feedback</p>
+                    <p style="margin: 0; color: var(--primary);">[Your Contact Information]</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

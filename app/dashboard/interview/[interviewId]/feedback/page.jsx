@@ -23,8 +23,10 @@ export default function Feedback({ params }) {
     const searchParams = useSearchParams();
     const mockId = searchParams.get('mockId');
 
-    // Get interviewId from params
-    const interviewId = params?.interviewId;
+    // Unwrap params using React.use()
+    const unwrappedParams = use(params);
+    // Get interviewId from unwrapped params
+    const interviewId = unwrappedParams?.interviewId;
 
     useEffect(() => {
         const fetchData = async () => {
@@ -162,16 +164,45 @@ export default function Feedback({ params }) {
                                         <p className="text-gray-600">{answer.question}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <div className="text-lg font-semibold text-blue-600">{answer.rating}/5</div>
+                                        <div className="text-lg font-semibold text-blue-600">
+                                            {(() => {
+                                                // Parse the rating value - handle various formats
+                                                const ratingStr = answer.rating || "0/5";
+                                                
+                                                // Check if rating already contains a fraction (e.g., "3/5")
+                                                if (ratingStr.includes('/')) {
+                                                    // Return the rating as is, without adding extra suffix
+                                                    return ratingStr;
+                                                } else {
+                                                    // If it's just a number, add the /5 suffix
+                                                    const numericRating = parseInt(ratingStr) || 0;
+                                                    return `${numericRating}/5`;
+                                                }
+                                            })()}
+                                        </div>
                                         <div className="flex items-center gap-1">
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star
-                                                    key={i}
-                                                    className={`w-4 h-4 ${
-                                                        i < parseInt(answer.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                                                    }`}
-                                                />
-                                            ))}
+                                            {[...Array(5)].map((_, i) => {
+                                                // Extract numeric part of rating for star display
+                                                const ratingStr = answer.rating || "0";
+                                                let numericRating = 0;
+                                                
+                                                if (ratingStr.includes('/')) {
+                                                    // Extract the first number from patterns like "3/5"
+                                                    const match = ratingStr.match(/^(\d+)/);
+                                                    numericRating = match ? parseInt(match[1]) : 0;
+                                                } else {
+                                                    numericRating = parseInt(ratingStr) || 0;
+                                                }
+                                                
+                                                return (
+                                                    <Star
+                                                        key={i}
+                                                        className={`w-4 h-4 ${
+                                                            i < numericRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                                        }`}
+                                                    />
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 </div>
@@ -179,18 +210,26 @@ export default function Feedback({ params }) {
                                 {/* Answer Section */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <h4 className="text-sm font-medium text-gray-700">Your Answer</h4>
-                                        <div className="p-3 bg-gray-50 rounded-lg">
+                                        <h4 className="text-sm font-medium text-gray-700">
+                                            {answer.isCodingQuestion ? "Your Code" : "Your Answer"}
+                                        </h4>
+                                        <div className="p-3 bg-gray-50 rounded-lg overflow-x-auto">
                                             <pre className="text-sm text-gray-800 whitespace-pre-wrap">
-                                                {answer.userAns}
+                                                <code>
+                                                    {answer.userAns}
+                                                </code>
                                             </pre>
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <h4 className="text-sm font-medium text-gray-700">Correct Answer</h4>
-                                        <div className="p-3 bg-green-50 rounded-lg">
+                                        <h4 className="text-sm font-medium text-gray-700">
+                                            {answer.isCodingQuestion ? "Model Solution" : "Correct Answer"}
+                                        </h4>
+                                        <div className="p-3 bg-green-50 rounded-lg overflow-x-auto">
                                             <pre className="text-sm text-gray-800 whitespace-pre-wrap">
-                                                {answer.correctAns}
+                                                <code>
+                                                    {answer.correctAns}
+                                                </code>
                                             </pre>
                                         </div>
                                     </div>
@@ -198,36 +237,254 @@ export default function Feedback({ params }) {
 
                                 {/* Feedback Section */}
                                 <div className="space-y-2">
-                                    <h4 className="text-sm font-medium text-gray-700">Feedback</h4>
-                                    <div className="p-3 bg-blue-50 rounded-lg">
-                                        <p className="text-sm text-gray-800">{answer.feedback}</p>
-                                    </div>
-                                </div>
+                                     <h4 className="text-sm font-medium text-gray-700">Feedback</h4>
+                                     <div className="p-3 bg-blue-50 rounded-lg">
+                                         {answer.feedback && answer.feedback.includes('##') ? (
+                                             // Render markdown for structured feedback
+                                             <div className="prose prose-sm max-w-none text-gray-800">
+                                                 {(() => {
+                                                     const lines = answer.feedback.split('\n');
+                                                     const renderedContent = [];
+                                                     let inCodeBlock = false;
+                                                     let codeContent = '';
+                                                     let codeBlockIndex = 0;
+                                                     
+                                                     // Process line by line
+                                                     for (let i = 0; i < lines.length; i++) {
+                                                         const line = lines[i];
+                                                         
+                                                         // Handle code blocks
+                                                         if (line.trim().startsWith('```')) {
+                                                             if (inCodeBlock) {
+                                                                 // End of code block
+                                                                 renderedContent.push(
+                                                                     <div key={`code-${codeBlockIndex}`} className="bg-gray-800 text-white p-3 rounded-md overflow-x-auto my-2">
+                                                                         <pre className="text-xs">
+                                                                             <code>{codeContent}</code>
+                                                                         </pre>
+                                                                     </div>
+                                                                 );
+                                                                 codeContent = '';
+                                                                 codeBlockIndex++;
+                                                                 inCodeBlock = false;
+                                                             } else {
+                                                                 // Start of code block
+                                                                 inCodeBlock = true;
+                                                             }
+                                                             continue;
+                                                         }
+                                                         
+                                                         // Inside code block
+                                                         if (inCodeBlock) {
+                                                             codeContent += line + '\n';
+                                                             continue;
+                                                         }
+                                                         
+                                                         // Normal markdown content
+                                                         // Handle headings
+                                                         if (line.startsWith('## ')) {
+                                                             renderedContent.push(
+                                                                 <h3 key={`heading-${i}`} className="text-lg font-semibold mt-4 mb-2">
+                                                                     {line.replace('## ', '')}
+                                                                 </h3>
+                                                             );
+                                                         } else if (line.startsWith('### ')) {
+                                                             renderedContent.push(
+                                                                 <h4 key={`subheading-${i}`} className="text-md font-semibold mt-3 mb-1">
+                                                                     {line.replace('### ', '')}
+                                                                 </h4>
+                                                             );
+                                                         }
+                                                         // Handle bullet points
+                                                         else if (line.startsWith('- ')) {
+                                                             renderedContent.push(
+                                                                 <li key={`bullet-${i}`} className="ml-4 text-sm">
+                                                                     {line.substring(2)}
+                                                                 </li>
+                                                             );
+                                                         }
+                                                         // Handle empty lines as paragraph breaks
+                                                         else if (line.trim() === '') {
+                                                             renderedContent.push(<br key={`br-${i}`} />);
+                                                         }
+                                                         // Regular paragraph
+                                                         else {
+                                                             renderedContent.push(
+                                                                 <p key={`p-${i}`} className="text-sm mb-2">
+                                                                     {line}
+                                                                 </p>
+                                                             );
+                                                         }
+                                                     }
+                                                     
+                                                     // Handle unclosed code block
+                                                     if (inCodeBlock && codeContent) {
+                                                         renderedContent.push(
+                                                             <div key={`code-${codeBlockIndex}`} className="bg-gray-800 text-white p-3 rounded-md overflow-x-auto my-2">
+                                                                 <pre className="text-xs">
+                                                                     <code>{codeContent}</code>
+                                                                 </pre>
+                                                             </div>
+                                                         );
+                                                     }
+                                                     
+                                                     return renderedContent;
+                                                 })()}
+                                             </div>
+                                         ) : (
+                                             <p className="text-sm text-gray-800 whitespace-pre-wrap">{answer.feedback}</p>
+                                         )}
+                                     </div>
+                                 </div>
 
                                 {/* Test Cases (for coding questions) */}
                                 {answer.isCodingQuestion && answer.testCases && (
-                                    <div className="space-y-2">
-                                        <h4 className="text-sm font-medium text-gray-700">Test Cases</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {JSON.parse(answer.testCases).map((testCase, i) => (
-                                                <div key={i} className="p-3 bg-gray-50 rounded-lg">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <span className="text-sm font-medium text-gray-700">
-                                                            Test Case {i + 1}
-                                                        </span>
-                                                        {testCase.output === answer.userAns ? (
-                                                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                                                        ) : (
-                                                            <XCircle className="w-4 h-4 text-red-500" />
-                                                        )}
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <p className="text-xs text-gray-600">Input: {testCase.input}</p>
-                                                        <p className="text-xs text-gray-600">Expected: {testCase.output}</p>
-                                                        <p className="text-xs text-gray-600">Explanation: {testCase.explanation}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                    <div className="space-y-4 mt-4">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-sm font-medium text-gray-700">Test Cases</h4>
+                                            
+                                            {(() => {
+                                                try {
+                                                    const testCases = JSON.parse(answer.testCases);
+                                                    if (!Array.isArray(testCases)) return null;
+                                                    
+                                                    // Parse user code execution results if available
+                                                    let userResults = [];
+                                                    try {
+                                                        if (answer.userCodeResults) {
+                                                            userResults = JSON.parse(answer.userCodeResults);
+                                                        }
+                                                    } catch (e) {
+                                                        console.error("Error parsing user results:", e);
+                                                        userResults = [];
+                                                    }
+                                                    
+                                                    // Fallback - create simple pass/fail results if real results are missing
+                                                    if (!userResults || userResults.length === 0) {
+                                                        userResults = testCases.map(testCase => ({
+                                                            input: testCase.input,
+                                                            expected: testCase.output,
+                                                            output: "No output (code not executed)",
+                                                            passed: false
+                                                        }));
+                                                    }
+                                                    
+                                                    // Count passed tests
+                                                    const passedTests = userResults.filter(r => r.passed).length;
+                                                    const totalTests = testCases.length;
+                                                    const passRatio = totalTests > 0 ? (passedTests / totalTests) : 0;
+                                                    
+                                                    return (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`font-medium ${passRatio >= 0.7 ? 'text-green-600' : passRatio >= 0.4 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                                {passedTests}/{totalTests} tests passed
+                                                            </span>
+                                                            <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                                <div 
+                                                                    className={`h-full ${passRatio >= 0.7 ? 'bg-green-500' : passRatio >= 0.4 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                                                    style={{ width: `${passRatio * 100}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                } catch (e) {
+                                                    return null;
+                                                }
+                                            })()}
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-1 gap-4">
+                                            {(() => {
+                                                try {
+                                                    const testCases = JSON.parse(answer.testCases);
+                                                    if (!Array.isArray(testCases)) {
+                                                        return <p className="text-sm text-red-500">Invalid test case data</p>;
+                                                    }
+                                                    
+                                                    // Parse user code execution results if available
+                                                    let userResults = [];
+                                                    try {
+                                                        if (answer.userCodeResults) {
+                                                            userResults = JSON.parse(answer.userCodeResults);
+                                                        }
+                                                    } catch (e) {
+                                                        console.error("Error parsing user results:", e);
+                                                        userResults = [];
+                                                    }
+                                                    
+                                                    // Fallback - create simple pass/fail results if real results are missing
+                                                    if (!userResults || userResults.length === 0) {
+                                                        userResults = testCases.map(testCase => ({
+                                                            input: testCase.input,
+                                                            expected: testCase.output,
+                                                            output: "No output (code not executed)",
+                                                            passed: false
+                                                        }));
+                                                    }
+                                                    
+                                                    return testCases.map((testCase, i) => {
+                                                        // Find matching user result for this test case
+                                                        const userResult = userResults[i] || {
+                                                            passed: false,
+                                                            output: "No output available"
+                                                        };
+                                                        
+                                                        return (
+                                                            <div key={i} className={`p-4 rounded-lg border-l-4 ${userResult.passed ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    <span className="text-sm font-medium text-gray-700">
+                                                                        Test Case {i + 1}
+                                                                    </span>
+                                                                    {userResult.passed ? (
+                                                                        <div className="flex items-center gap-1">
+                                                                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                                                            <span className="text-xs text-green-500">Passed</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="flex items-center gap-1">
+                                                                            <XCircle className="w-4 h-4 text-red-500" />
+                                                                            <span className="text-xs text-red-500">Failed</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                                                                    <div className="space-y-1">
+                                                                        <p className="text-xs font-medium text-gray-700">Input:</p>
+                                                                        <pre className="text-xs p-2 bg-gray-100 rounded whitespace-pre-wrap overflow-x-auto">
+                                                                            {testCase.input}
+                                                                        </pre>
+                                                                    </div>
+                                                                    
+                                                                    <div className="space-y-1">
+                                                                        <div className="flex justify-between">
+                                                                            <p className="text-xs font-medium text-gray-700">Expected Output:</p>
+                                                                            <p className="text-xs font-medium text-gray-700">Your Output:</p>
+                                                                        </div>
+                                                                        <div className="grid grid-cols-2 gap-2">
+                                                                            <pre className="text-xs p-2 bg-gray-100 rounded whitespace-pre-wrap overflow-x-auto">
+                                                                                {testCase.output}
+                                                                            </pre>
+                                                                            <pre className={`text-xs p-2 rounded whitespace-pre-wrap overflow-x-auto ${userResult.passed ? 'bg-green-100' : 'bg-red-100'}`}>
+                                                                                {userResult.output || "No output"}
+                                                                            </pre>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                {testCase.explanation && (
+                                                                    <div className="mt-2">
+                                                                        <p className="text-xs font-medium text-gray-700">Explanation:</p>
+                                                                        <p className="text-xs text-gray-600 mt-1">{testCase.explanation}</p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    });
+                                                } catch (e) {
+                                                    return <p className="text-sm text-red-500">Error processing test cases: {e.message}</p>;
+                                                }
+                                            })()}
                                         </div>
                                     </div>
                                 )}
