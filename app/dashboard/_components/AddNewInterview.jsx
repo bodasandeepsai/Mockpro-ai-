@@ -33,45 +33,104 @@ function AddNewInterview() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    console.log('Starting interview generation...');
 
     try {
       if (!jobPosition || !jobDesc || !jobExperience) {
         toast.error("Please fill in all fields");
+        setLoading(false);
         return;
       }
 
+      // Use the more robust AI prompt and response cleaning logic
+      console.log('Sending request to Gemini AI...');
+      const InputPrompt = `Job Position: ${jobPosition}, Job Description: ${jobDesc}, Years of Experience: ${jobExperience}. \n\nBased on this information, please provide 5 interview questions with answers in JSON format.\n\nReturn ONLY a valid JSON array with the following structure (no markdown formatting, no code blocks, just pure JSON):\n[\n  {\n    \"question\": \"Your interview question here\",\n    \"answer\": \"The expected answer or explanation\"\n  },\n  {\n    \"question\": \"Another interview question\",\n    \"answer\": \"Another expected answer\"\n  }\n]\n\nMake sure the response is valid JSON that can be parsed directly.`;
+
+      const questionResponse = await generateInterviewQuestion(jobPosition, jobDesc, jobExperience);
+      let MockJsonResp = questionResponse;
+      if (typeof MockJsonResp !== 'string') {
+        MockJsonResp = JSON.stringify(MockJsonResp);
+      }
+      // Clean the response to handle various formatting issues
+      MockJsonResp = MockJsonResp
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .replace(/^[\s\n]*{/, '{')
+        .replace(/}[\s\n]*$/, '}')
+        .replace(/^[\s\n]*\[/, '[')
+        .replace(/\]\s\n]*$/, ']')
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+        .trim();
+
+      let parsedResponse;
       try {
-        const questionResponse = await generateInterviewQuestion(jobPosition, jobDesc, jobExperience);
-        
-        const interviewQuestions = generateInterviewQuestionsFromResponse(questionResponse, jobPosition, jobDesc, jobExperience);
-        
-        const MockJsonResp = JSON.stringify(interviewQuestions);
-        setJsonResponse(MockJsonResp);
-
-        const resp = await db.insert(MockInterview)
-          .values({
-            mockId: uuidv4(),
-            jsonMockResp: MockJsonResp,
-            jobPosition: jobPosition,
-            jobDesc: jobDesc,
-            jobExperience: jobExperience,
-            createdBy: user?.primaryEmailAddress?.emailAddress,
-            createdAt: moment().format("DD-MM-YYYY")
-          }).returning({ mockId: MockInterview.mockId });
-
-        if (resp && resp[0]?.mockId) {
-          toast.success("Interview created successfully!");
-          setOpenDialog(false);
-          router.push('/dashboard/interview/' + resp[0].mockId);
-        } else {
-          throw new Error("Failed to create interview");
+        parsedResponse = JSON.parse(MockJsonResp);
+        if (!parsedResponse || typeof parsedResponse !== 'object') {
+          throw new Error('Invalid response structure');
         }
-      } catch (error) {
-        console.error("Failed to generate questions:", error);
-        toast.error("Failed to generate interview questions. Please try again.");
+        console.log('Successfully parsed JSON response');
+      } catch (parseError) {
+        console.error('JSON parsing error:', parseError);
+        console.error('Raw response:', MockJsonResp);
+        // Try to extract JSON from the response if it's wrapped in other text
+        try {
+          const jsonMatch = MockJsonResp.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            const extractedJson = jsonMatch[0];
+            parsedResponse = JSON.parse(extractedJson);
+            MockJsonResp = extractedJson;
+            console.log('Successfully extracted and parsed JSON from response');
+          } else {
+            throw new Error('No valid JSON found in response');
+          }
+        } catch (extractError) {
+          console.error('Failed to extract JSON:', extractError);
+          toast.error("Failed to generate interview questions. Please try again.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      setJsonResponse(MockJsonResp);
+
+      if (!user?.primaryEmailAddress?.emailAddress) {
+        toast.error("User information is missing. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      console.log('Inserting into database...');
+      const mockId = uuidv4();
+      const resp = await db.insert(MockInterview)
+        .values({
+          mockId: mockId,
+          jsonMockResp: MockJsonResp,
+          jobPosition: jobPosition,
+          jobDesc: jobDesc,
+          jobExperience: jobExperience,
+          createdBy: user.primaryEmailAddress.emailAddress,
+          createdAt: moment().format("DD-MM-YYYY")
+        }).returning({ mockId: MockInterview.mockId });
+
+      console.log('Database response:', resp);
+
+      if (resp && resp[0]?.mockId) {
+        console.log('Interview created successfully, redirecting...');
+        toast.success("Interview created successfully!");
+        setOpenDialog(false);
+        router.push('/dashboard/interview/' + resp[0].mockId);
+      } else {
+        console.error('Database insertion failed - no response or mockId');
+        throw new Error("Failed to create interview");
       }
     } catch (error) {
       console.error("Error:", error);
+      console.error("Error details:", {
+        jobPosition,
+        jobDesc,
+        jobExperience,
+        userEmail: user?.primaryEmailAddress?.emailAddress
+      });
       toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
