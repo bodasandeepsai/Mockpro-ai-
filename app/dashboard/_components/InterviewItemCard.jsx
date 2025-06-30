@@ -7,6 +7,36 @@ import moment from 'moment'
 function InterviewItemCard({interview}) {
     const router = useRouter();
 
+    // Helper function to parse DD-MM-YYYY format dates
+    const parseCustomDate = (dateString) => {
+        if (!dateString) return null;
+        
+        try {
+            // Handle DD-MM-YYYY format
+            if (dateString.includes('-')) {
+                const parts = dateString.split('-');
+                if (parts.length === 3) {
+                    const [day, month, year] = parts;
+                    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                }
+            }
+            
+            // Fallback to standard date parsing
+            const date = new Date(dateString);
+            return isNaN(date.getTime()) ? null : date;
+        } catch (error) {
+            console.error('Error parsing date:', dateString, error);
+            return null;
+        }
+    };
+
+    // Helper function to format date for display
+    const formatDateForDisplay = (dateString) => {
+        const date = parseCustomDate(dateString);
+        if (!date) return 'Invalid Date';
+        return moment(date).fromNow();
+    };
+
     const onStart=()=>{
         router.push('/dashboard/interview/'+interview?.mockId)
     }
@@ -26,7 +56,7 @@ function InterviewItemCard({interview}) {
                             {interview.jobExperience} years of experience
                         </div>
                         <p className="text-xs text-gray-400">
-                            Created {moment(interview.createdAt).fromNow()}
+                            Created {formatDateForDisplay(interview.createdAt)}
                         </p>
                     </div>
                     <div className="flex flex-col gap-2">

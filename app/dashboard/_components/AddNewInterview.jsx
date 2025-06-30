@@ -33,6 +33,7 @@ function AddNewInterview() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    console.log('Starting interview generation...');
 
     try {
       if (!jobPosition || !jobDesc || !jobExperience) {
@@ -40,40 +41,114 @@ function AddNewInterview() {
         return;
       }
 
-      const InputPrompt = `Job Position: ${jobPosition}, Job Description: ${jobDesc}, Years of Experience: ${jobExperience}. Based on this information, please provide 5 interview questions with answers in JSON format.`;
+      console.log('Sending request to Gemini AI...');
+      const InputPrompt = `Job Position: ${jobPosition}, Job Description: ${jobDesc}, Years of Experience: ${jobExperience}. 
+
+Based on this information, please provide 5 interview questions with answers in JSON format.
+
+Return ONLY a valid JSON array with the following structure (no markdown formatting, no code blocks, just pure JSON):
+[
+  {
+    "question": "Your interview question here",
+    "answer": "The expected answer or explanation"
+  },
+  {
+    "question": "Another interview question",
+    "answer": "Another expected answer"
+  }
+]
+
+Make sure the response is valid JSON that can be parsed directly.`;
 
       const result = await chatSession.sendMessage(InputPrompt);
-      const MockJsonResp = result.response.text().replace('```json', '').replace('```', '');
+      console.log('Received response from Gemini AI');
+      
+      let MockJsonResp = result.response.text();
+      console.log('Raw AI response:', MockJsonResp.substring(0, 200) + '...');
+      
+      // Clean the response to handle various formatting issues
+      MockJsonResp = MockJsonResp
+        .replace(/```json\n?/g, '')  // Remove opening json code block
+        .replace(/```\n?/g, '')      // Remove closing code block
+        .replace(/^[\s\n]*{/, '{')   // Remove leading whitespace before opening brace
+        .replace(/}[\s\n]*$/, '}')   // Remove trailing whitespace after closing brace
+        .replace(/^[\s\n]*\[/, '[')  // Remove leading whitespace before opening bracket
+        .replace(/\]\s\n]*$/, ']')   // Remove trailing whitespace after closing bracket
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
+        .trim();
 
+      console.log('Cleaned response:', MockJsonResp.substring(0, 200) + '...');
+
+      let parsedResponse;
       try {
-        JSON.parse(MockJsonResp); // Validate JSON
-      } catch (error) {
-        toast.error("Failed to generate interview questions. Please try again.");
-        return;
+        parsedResponse = JSON.parse(MockJsonResp);
+        // Validate that we have a valid structure
+        if (!parsedResponse || typeof parsedResponse !== 'object') {
+          throw new Error('Invalid response structure');
+        }
+        console.log('Successfully parsed JSON response');
+      } catch (parseError) {
+        console.error('JSON parsing error:', parseError);
+        console.error('Raw response:', MockJsonResp);
+        
+        // Try to extract JSON from the response if it's wrapped in other text
+        try {
+          const jsonMatch = MockJsonResp.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            const extractedJson = jsonMatch[0];
+            parsedResponse = JSON.parse(extractedJson);
+            MockJsonResp = extractedJson; // Update the cleaned response
+            console.log('Successfully extracted and parsed JSON from response');
+          } else {
+            throw new Error('No valid JSON found in response');
+          }
+        } catch (extractError) {
+          console.error('Failed to extract JSON:', extractError);
+          toast.error("Failed to generate interview questions. Please try again.");
+          return;
+        }
       }
 
       setJsonResponse(MockJsonResp);
 
+      // Validate required fields before database insertion
+      if (!user?.primaryEmailAddress?.emailAddress) {
+        toast.error("User information is missing. Please try again.");
+        return;
+      }
+
+      console.log('Inserting into database...');
+      const mockId = uuidv4();
       const resp = await db.insert(MockInterview)
         .values({
-          mockId: uuidv4(),
+          mockId: mockId,
           jsonMockResp: MockJsonResp,
           jobPosition: jobPosition,
           jobDesc: jobDesc,
           jobExperience: jobExperience,
-          createdBy: user?.primaryEmailAddress?.emailAddress,
+          createdBy: user.primaryEmailAddress.emailAddress,
           createdAt: moment().format("DD-MM-YYYY")
         }).returning({ mockId: MockInterview.mockId });
 
+      console.log('Database response:', resp);
+
       if (resp && resp[0]?.mockId) {
+        console.log('Interview created successfully, redirecting...');
         toast.success("Interview created successfully!");
         setOpenDialog(false);
         router.push('/dashboard/interview/' + resp[0].mockId);
       } else {
+        console.error('Database insertion failed - no response or mockId');
         throw new Error("Failed to create interview");
       }
     } catch (error) {
       console.error("Error:", error);
+      console.error("Error details:", {
+        jobPosition,
+        jobDesc,
+        jobExperience,
+        userEmail: user?.primaryEmailAddress?.emailAddress
+      });
       toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
