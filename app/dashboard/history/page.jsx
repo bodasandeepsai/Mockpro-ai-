@@ -1,6 +1,6 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import { db } from '@/utils/db';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { db, getDb } from '@/utils/db';
 import { MockInterview, UserAnswer } from '@/utils/schema';
 import { useUser } from '@clerk/nextjs';
 import { eq, desc, inArray } from 'drizzle-orm';
@@ -601,4 +601,4 @@ function HistoryPage() {
     );
 }
 
-export default HistoryPage; 
+export default HistoryPage;

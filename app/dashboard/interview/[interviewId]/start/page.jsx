@@ -103,19 +103,217 @@ export default function StartInterview({ params }) {
         if (!user?.primaryEmailAddress?.emailAddress || !codingQuestion) return;
 
         try {
+            // Extract detailed feedback from the AI model's response
+            let feedbackMessage = '';
+            
+            // Use the detailed feedback from the AI if available
+            if (codingQuestion.detailedFeedback) {
+                feedbackMessage = codingQuestion.detailedFeedback;
+            } else if (codingQuestion.complexity) {
+                // Fallback to complexity-based feedback
+                const timeComplexity = codingQuestion.complexity.time || 'Not provided';
+                const spaceComplexity = codingQuestion.complexity.space || 'Not provided';
+                feedbackMessage = `Time Complexity: ${timeComplexity}\nSpace Complexity: ${spaceComplexity}`;
+            } else {
+                // Minimal fallback feedback
+                feedbackMessage = 'Complexity analysis not available for this question.';
+            }
+            
+            // Safely handle testCases
+            const testCasesStr = codingQuestion.testCases ? 
+                JSON.stringify(codingQuestion.testCases) : 
+                JSON.stringify([]);
+            
+            // Execute user code against test cases
+            let userCodeResults = [];
+            
+            if (codingQuestion.testCases && Array.isArray(codingQuestion.testCases)) {
+                try {
+                    // Create a safe execution environment for the user's code
+                    // We use a function constructor instead of eval for slightly better isolation
+                    let userFunction;
+                    try {
+                        // Create a function from the user's code
+                        // This assumes the code defines a function called solution
+                        // We wrap it in a try-catch for safety
+                        userFunction = new Function(`
+                            try {
+                                ${code}
+                                if (typeof solution !== 'function') {
+                                    throw new Error('Your code must define a function named "solution"');
+                                }
+                                return solution;
+                            } catch (e) {
+                                throw new Error('Error in your code: ' + e.message);
+                            }
+                        `)();
+                    } catch (codeError) {
+                        // If we can't create the function, add error to all test cases
+                        userCodeResults = codingQuestion.testCases.map(testCase => ({
+                            input: testCase.input,
+                            expected: testCase.output,
+                            output: `Error: ${codeError.message}`,
+                            passed: false,
+                            error: codeError.message
+                        }));
+                    }
+
+                    // If we successfully created the function, test it against each test case
+                    if (userFunction) {
+                        userCodeResults = codingQuestion.testCases.map(testCase => {
+                            try {
+                                // Parse the input based on its format
+                                let testInput;
+                                try {
+                                    // Try to parse as JSON first
+                                    testInput = JSON.parse(testCase.input);
+                                } catch (e) {
+                                    // If not valid JSON, use as is
+                                    testInput = testCase.input;
+                                    
+                                    // Try to eval if it looks like an array or object string
+                                    if ((testCase.input.startsWith('[') && testCase.input.endsWith(']')) ||
+                                        (testCase.input.startsWith('{') && testCase.input.endsWith('}'))) {
+                                        try {
+                                            testInput = eval(`(${testCase.input})`);
+                                        } catch (evalError) {
+                                            // Fallback to original string if eval fails
+                                            testInput = testCase.input;
+                                        }
+                                    }
+                                }
+
+                                // Execute the function with the input
+                                let userOutput;
+                                if (Array.isArray(testInput)) {
+                                    // If input is an array, spread it as arguments
+                                    userOutput = userFunction(...testInput);
+                                } else {
+                                    // Otherwise, pass it as a single argument
+                                    userOutput = userFunction(testInput);
+                                }
+
+                                // Format outputs for comparison
+                                let formattedUserOutput, formattedExpectedOutput;
+                                
+                                // Format user output based on type
+                                if (typeof userOutput === 'object') {
+                                    formattedUserOutput = JSON.stringify(userOutput);
+                                } else {
+                                    formattedUserOutput = String(userOutput);
+                                }
+                                
+                                // Format expected output
+                                try {
+                                    // Try parsing the expected output as JSON
+                                    const parsedExpected = JSON.parse(testCase.output);
+                                    formattedExpectedOutput = JSON.stringify(parsedExpected);
+                                } catch (e) {
+                                    // If not valid JSON, use as string
+                                    formattedExpectedOutput = String(testCase.output);
+                                }
+                                
+                                // Compare and determine if the test passed
+                                const passed = formattedUserOutput === formattedExpectedOutput;
+
+                                return {
+                                    input: testCase.input,
+                                    expected: testCase.output,
+                                    output: formattedUserOutput,
+                                    passed: passed
+                                };
+                            } catch (error) {
+                                console.error('Error executing test case:', error);
+                                return {
+                                    input: testCase.input,
+                                    expected: testCase.output,
+                                    output: `Error: ${error.message}`,
+                                    passed: false,
+                                    error: error.message
+                                };
+                            }
+                        });
+                    }
+
+                    // Calculate score based on passing tests
+                    const passedCount = userCodeResults.filter(r => r.passed).length;
+                    const totalTests = userCodeResults.length;
+                    
+                    // Enhance feedback with test results
+                    feedbackMessage += `\n\n## Test Results: ${passedCount}/${totalTests} tests passed.\n\n`;
+                    
+                    // Add specific detail based on results
+                    if (passedCount === totalTests) {
+                        feedbackMessage += 'Excellent! All test cases passed. Your solution is correct.\n\n';
+                    } else if (passedCount > 0) {
+                        feedbackMessage += 'Some test cases passed, but others failed. Review the failing test cases to identify issues in your solution.\n\n';
+                        
+                        // Add details about failing test cases
+                        const failingTests = userCodeResults.filter(r => !r.passed);
+                        feedbackMessage += '### Failing Test Cases:\n';
+                        failingTests.forEach((test, i) => {
+                            feedbackMessage += `\nTest ${i+1}:\n`;
+                            feedbackMessage += `- Input: ${test.input}\n`;
+                            feedbackMessage += `- Expected: ${test.expected}\n`;
+                            feedbackMessage += `- Your output: ${test.output}\n`;
+                            if (test.error) feedbackMessage += `- Error: ${test.error}\n`;
+                        });
+                    } else {
+                        feedbackMessage += 'No test cases passed. Here are some suggestions to improve your solution:\n\n';
+                        feedbackMessage += '- Check if your function name is "solution" as required\n';
+                        feedbackMessage += '- Ensure your function accepts the correct parameters\n';
+                        feedbackMessage += '- Verify your solution handles all edge cases\n';
+                        feedbackMessage += '- Look for logic errors in your implementation\n\n';
+                        
+                        // Add the first error if available
+                        const firstError = userCodeResults.find(r => r.error);
+                        if (firstError) {
+                            feedbackMessage += `First error encountered: ${firstError.error}\n\n`;
+                        }
+                    }
+                    
+                    // Add the model solution if available and not all tests passed
+                    if (codingQuestion.solution && passedCount < totalTests) {
+                        feedbackMessage += '\n## Model Solution:\n\n';
+                        feedbackMessage += codingQuestion.solution;
+                        feedbackMessage += '\n\nTry to understand this solution and compare it with your approach.';
+                    }
+                } catch (execError) {
+                    console.error('Error executing user code:', execError);
+                    feedbackMessage += `\n\nError evaluating your code: ${execError.message}`;
+                }
+            }
+            
+            // Generate a rating based on test results
+            const passedCount = userCodeResults.filter(r => r.passed).length;
+            const totalTests = userCodeResults.length > 0 ? userCodeResults.length : 1;
+            const successRatio = passedCount / totalTests;
+            
+            // Calculate a rating out of 5 based on test case success
+            let rating;
+            if (successRatio === 1) rating = "5/5"; // All tests passed
+            else if (successRatio >= 0.8) rating = "4/5";
+            else if (successRatio >= 0.6) rating = "3/5";
+            else if (successRatio >= 0.4) rating = "2/5";
+            else if (successRatio > 0) rating = "1/5";
+            else rating = "0/5"; // No tests passed
+            
             await db.insert(UserAnswer).values({
                 mockIdref: mockId,
                 question: codingQuestion.question,
                 userAns: code,
-                correctAns: codingQuestion.solution,
-                feedback: `Time Complexity: ${codingQuestion.complexity.time}\nSpace Complexity: ${codingQuestion.complexity.space}`,
+                correctAns: codingQuestion.solution || 'Solution not available',
+                feedback: feedbackMessage,
                 userEmail: user.primaryEmailAddress.emailAddress,
                 createdAt: new Date().toISOString(),
                 isCodingQuestion: true,
                 codeLanguage: 'javascript',
-                testCases: JSON.stringify(codingQuestion.testCases)
+                testCases: testCasesStr,
+                userCodeResults: JSON.stringify(userCodeResults),
+                rating: rating
             });
-            toast.success('Code saved successfully!');
+            
+            toast.success('Code saved and evaluated successfully!');
             handleFinishInterview();
         } catch (error) {
             console.error('Error saving code:', error);

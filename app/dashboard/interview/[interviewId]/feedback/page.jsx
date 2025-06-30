@@ -43,9 +43,8 @@ export default function Feedback({ params }) {
     // Helper function to parse DD-MM-YYYY format dates
     const parseCustomDate = (dateString) => {
         if (!dateString) return null;
-        
+
         try {
-            // Handle DD-MM-YYYY format
             if (dateString.includes('-')) {
                 const parts = dateString.split('-');
                 if (parts.length === 3) {
@@ -53,8 +52,7 @@ export default function Feedback({ params }) {
                     return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
                 }
             }
-            
-            // Fallback to standard date parsing
+
             const date = new Date(dateString);
             return isNaN(date.getTime()) ? null : date;
         } catch (error) {

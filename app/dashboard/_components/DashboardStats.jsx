@@ -1,8 +1,9 @@
 "use client"
 import { Video, CheckCircle2, Star, ListChecks, ClipboardCheck } from 'lucide-react'
-import { useEffect, useState } from 'react'
+
+import { useEffect, useState, useMemo } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { db } from '@/utils/db'
+import { db, getDb } from '@/utils/db'
 import { MockInterview, UserAnswer } from '@/utils/schema'
 import { eq, inArray } from 'drizzle-orm'
 import { Card, CardContent } from '@/components/ui/card'
@@ -16,10 +17,18 @@ export default function DashboardStats() {
         answeredQuestions: 0,
         averageRating: 0
     });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    
+    // Use the optimized database connection
+    const dbInstance = useMemo(() => getDb(), []);
 
     useEffect(() => {
         const getStats = async () => {
             if (!user?.primaryEmailAddress?.emailAddress) return;
+            
+            setLoading(true);
+            setError(null);
 
             try {
                 // Get all interviews for the user
@@ -35,6 +44,7 @@ export default function DashboardStats() {
                         answeredQuestions: 0,
                         averageRating: 0
                     });
+                    setLoading(false);
                     return;
                 }
 
@@ -108,14 +118,50 @@ export default function DashboardStats() {
                 });
             } catch (error) {
                 console.error('Error fetching stats:', error);
+                setError('Failed to load dashboard statistics');
+            } finally {
+                setLoading(false);
             }
         };
 
-        getStats();
-    }, [user]);
+        if (user?.primaryEmailAddress?.emailAddress) {
+            getStats();
+        }
+    }, [user, dbInstance]);
+
+    // Memoize the completion rate calculation to avoid recalculating on every render
+    const completionRate = useMemo(() => {
+        return stats.totalQuestions > 0
+            ? Math.round((stats.answeredQuestions / stats.totalQuestions) * 100)
+            : 0;
+    }, [stats.totalQuestions, stats.answeredQuestions]);
+
+    if (loading) {
+        return (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {[1, 2, 3, 4].map((_, index) => (
+                    <Card key={index} className="opacity-60">
+                        <CardContent>
+                            <div className="flex items-center space-x-2">
+                                Loading statistics...
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md">
+                {error}
+            </div>
+        );
+    }
 
     return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5 mb-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-8">
             {/* Total Interviews */}
             <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
                 <CardContent className="p-6">
@@ -188,8 +234,23 @@ export default function DashboardStats() {
                             <Star className="w-6 h-6 text-orange-600" />
                         </div>
                     </div>
+
+                </CardContent>
+            </Card>
+            {/* Completion Rate */}
+            <Card className="bg-gradient-to-r from-pink-50 to-pink-100 border-pink-100">
+                <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-pink-600">Completion Rate</p>
+                            <p className="text-2xl font-bold text-pink-900">{completionRate}%</p>
+                        </div>
+                        <div className="p-3 bg-pink-100 rounded-full">
+                            <CheckCircle2 className="w-6 h-6 text-pink-600" />
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>
     );
-} 
+}
