@@ -34,7 +34,7 @@ function InterviewItemCard({interview}) {
     const formatDateForDisplay = (dateString) => {
         const date = parseCustomDate(dateString);
         if (!date) return 'Invalid Date';
-        return moment(date).fromNow();
+        return moment(date).format('MMM DD, YYYY');
     };
 
     const onStart=()=>{

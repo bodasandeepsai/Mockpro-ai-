@@ -22,6 +22,7 @@ import { toast } from 'sonner'
 
 function AddNewInterview() {
   const [openDialog, setOpenDialog] = useState(false);
+  const [interviewType, setInterviewType] = useState(null); // 'technical' or 'coding'
   const [jobPosition, setJobPosition] = useState("");
   const [jobDesc, setJobDesc] = useState("");
   const [jobExperience, setJobExperience] = useState("");
@@ -381,22 +382,71 @@ function AddNewInterview() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className='p-8 border rounded-lg bg-white hover:shadow-lg cursor-pointer transition-all duration-200'
-        onClick={() => setOpenDialog(true)}>
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <div className="p-4 bg-blue-50 rounded-full">
-            <Plus className="h-8 w-8 text-blue-600" />
+    <div className="max-w-6xl mx-auto">
+      {/* Interview Type Selection */}
+      {!interviewType ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Technical Interview Card */}
+          <div
+            onClick={() => {
+              setInterviewType('technical');
+              setOpenDialog(true);
+            }}
+            className="p-8 border-2 border-blue-200 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-xl cursor-pointer transition-all duration-200 hover:border-blue-500 hover:scale-105"
+          >
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="p-4 bg-blue-500 rounded-full">
+                <Briefcase className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="font-bold text-xl text-blue-900">Technical Interview</h2>
+              <p className="text-blue-700 text-center text-sm">
+                Practice coding, system design, and technical problem-solving questions
+              </p>
+              <div className="text-xs text-blue-600 font-semibold mt-2">Available Now</div>
+            </div>
           </div>
-          <h2 className='font-semibold text-xl text-gray-800'>Start New Interview</h2>
-          <p className="text-gray-500 text-center">Create a new AI-powered mock interview session</p>
-        </div>
-      </div>
 
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+          {/* Coding Interview Card (Coming Soon) */}
+          <div className="p-8 border-2 border-gray-300 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 opacity-60 cursor-not-allowed">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="p-4 bg-gray-400 rounded-full">
+                <FileText className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="font-bold text-xl text-gray-700">Coding Interview</h2>
+              <p className="text-gray-600 text-center text-sm">
+                Solve algorithmic challenges with real-time code execution
+              </p>
+              <div className="text-xs text-gray-500 font-semibold mt-2">Coming Soon</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="p-8 border rounded-lg bg-white hover:shadow-lg cursor-pointer transition-all duration-200"
+          onClick={() => {
+            setInterviewType(null);
+          }}>
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="flex items-center gap-2">
+              <p className="text-gray-600 text-sm">← Back to Interview Types</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Dialog open={openDialog} onOpenChange={(open) => {
+        setOpenDialog(open);
+        if (!open) {
+          // Reset form when dialog closes
+          setJobPosition("");
+          setJobDesc("");
+          setJobExperience("");
+        }
+      }}>
         <DialogContent className='max-w-2xl'>
           <DialogHeader>
-            <DialogTitle className='text-2xl font-bold text-gray-900'>Create New Interview</DialogTitle>
+            <DialogTitle className='text-2xl font-bold text-gray-900'>
+              Create {interviewType === 'technical' ? 'Technical' : ''} Interview
+            </DialogTitle>
             <DialogDescription className="text-gray-600">
               Fill in the details below to start your AI-powered mock interview
             </DialogDescription>
