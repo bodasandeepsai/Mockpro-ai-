@@ -556,15 +556,17 @@ function HistoryPage() {
                                         )}
 
                                         <div className="flex gap-2 pt-2">
-                                            <Link 
-                                                href={`/dashboard/interview/${interview.mockId}`}
-                                                className="flex-1"
-                                            >
-                                                <Button variant="outline" size="sm" className="w-full">
-                                                    <Eye className="w-4 h-4 mr-1" />
-                                                    View Details
-                                                </Button>
-                                            </Link>
+                                            {interview.status !== 'completed' && (
+                                                <Link 
+                                                    href={`/dashboard/interview/${interview.mockId}`}
+                                                    className="flex-1"
+                                                >
+                                                    <Button variant="outline" size="sm" className="w-full">
+                                                        <Eye className="w-4 h-4 mr-1" />
+                                                        View Details
+                                                    </Button>
+                                                </Link>
+                                            )}
                                             
                                             {interview.status === 'completed' && (
                                 <Link 

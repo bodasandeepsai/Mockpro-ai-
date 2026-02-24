@@ -87,10 +87,7 @@ export default function DashboardStats() {
                         console.error('Error parsing interview questions:', error);
                     }
 
-                    // Add coding question if exists
-                    if (answers.some(answer => answer.isCodingQuestion)) {
-                        totalQuestionsCount += 1;
-                    }
+                    // coding questions are no longer part of interviews; count only JSON questions
 
                     // Determine interview status
                     if (completedAnswers.length > 0 && completedAnswers.length === totalQuestions) {

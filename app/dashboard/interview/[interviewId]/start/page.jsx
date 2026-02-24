@@ -8,10 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import RecordAnsSection from "./_components/RecordAnsSection";
-import QuestionsSection from "./_components/QuestionsSection";
-import CodeEditor from "./_components/CodeEditor";
 import WebcamSection from "./_components/WebcamSection";
-import { generateCodingQuestion } from "@/utils/GemeniAIModal";
 import { useUser } from "@clerk/nextjs";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { use } from 'react'
@@ -23,7 +20,6 @@ export default function StartInterview({ params }) {
     const [error, setError] = useState(null);
     const [questions, setQuestions] = useState([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-    const [codingQuestion, setCodingQuestion] = useState(null);
     const router = useRouter();
     const searchParams = useSearchParams();
     const mockId = searchParams.get('mockId');
@@ -59,16 +55,9 @@ export default function StartInterview({ params }) {
                         parsedQuestions = [];
                     }
 
-                    // Generate coding question
-                    const codingQ = await generateCodingQuestion(
-                        interview.jobPosition,
-                        interview.jobDesc,
-                        interview.jobExperience
-                    );
-
+                    // only shortlist first five questions (all theory by design)
                     setInterviewDetails(interview);
-                    setQuestions(parsedQuestions);
-                    setCodingQuestion(codingQ);
+                    setQuestions(parsedQuestions.slice(0, 5));
                 } else {
                     setError('Interview not found');
                 }
@@ -84,8 +73,10 @@ export default function StartInterview({ params }) {
     }, [interviewId]);
 
     const handleNext = () => {
-        if (currentQuestionIndex < questions.length) {
+        if (currentQuestionIndex < questions.length - 1) {
             setCurrentQuestionIndex(prev => prev + 1);
+        } else {
+            handleFinishInterview();
         }
     };
 
@@ -100,7 +91,9 @@ export default function StartInterview({ params }) {
     };
 
     const handleSaveCode = async (code) => {
-        if (!user?.primaryEmailAddress?.emailAddress || !codingQuestion) return;
+        // coding question removed; stubbed out
+        return;
+        /*
 
         try {
             // Extract detailed feedback from the AI model's response
@@ -319,6 +312,7 @@ export default function StartInterview({ params }) {
             console.error('Error saving code:', error);
             toast.error('Failed to save code');
         }
+    */
     };
 
     if (loading) {
@@ -345,9 +339,9 @@ export default function StartInterview({ params }) {
         );
     }
 
-    const isLastQuestion = currentQuestionIndex === questions.length;
-    const currentQuestion = isLastQuestion ? codingQuestion : questions[currentQuestionIndex];
-    const progress = ((currentQuestionIndex + 1) / (questions.length + 1)) * 100;
+    const isLastQuestion = currentQuestionIndex === questions.length - 1;
+    const currentQuestion = questions[currentQuestionIndex];
+    const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
     return (
         <div className="space-y-6">
@@ -391,26 +385,19 @@ export default function StartInterview({ params }) {
                 <div className="lg:col-span-8 space-y-6">
                     
 
-                    {/* Recording/Code Section */}
+                    {/* Recording Section */}
                     <Card className="bg-white shadow-sm">
                         <CardHeader>
                             <CardTitle className="text-xl">
-                                {isLastQuestion ? 'Coding Question' : 'Record Your Answer'}
+                                Record Your Answer
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            {isLastQuestion ? (
-                                <CodeEditor
-                                    question={codingQuestion?.question}
-                                    onSave={handleSaveCode}
-                                />
-                            ) : (
-                                <RecordAnsSection
-                                    question={currentQuestion}
-                                    mockId={mockId}
-                                    onNext={handleNext}
-                                />
-                            )}
+                            <RecordAnsSection
+                                question={currentQuestion}
+                                mockId={mockId}
+                                onNext={handleNext}
+                            />
                         </CardContent>
                     </Card>
                 </div>
@@ -438,7 +425,7 @@ export default function StartInterview({ params }) {
                         Previous
                     </Button>
                     <Button
-                        onClick={isLastQuestion ? handleFinishInterview : handleNext}
+                        onClick={handleNext}
                         className="flex items-center gap-2"
                     >
                         {isLastQuestion ? (

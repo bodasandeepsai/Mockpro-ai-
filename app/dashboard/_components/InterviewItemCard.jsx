@@ -69,23 +69,27 @@ function InterviewItemCard({interview}) {
                     </div>
                 </div>
                 <div className="flex flex-col gap-2 mt-4">
-                    <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="flex items-center gap-2"
-                        onClick={onFeedback}
-                    >
-                        <MessageSquare className="h-4 w-4" />
-                        Feedback
-                    </Button>
-                    <Button 
-                        size="sm" 
-                        className="flex items-center gap-2"
-                        onClick={onStart}
-                    >
-                        <Play className="h-4 w-4" />
-                        Start
-                    </Button>
+                    {interview.status !== 'completed' && (
+                        <Button 
+                            size="sm" 
+                            className="flex items-center gap-2"
+                            onClick={onStart}
+                        >
+                            <Play className="h-4 w-4" />
+                            Start
+                        </Button>
+                    )}
+                    {interview.status === 'completed' && (
+                        <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="flex items-center gap-2"
+                            onClick={onFeedback}
+                        >
+                            <MessageSquare className="h-4 w-4" />
+                            Feedback
+                        </Button>
+                    )}
                 </div>
             </div>
         </div>

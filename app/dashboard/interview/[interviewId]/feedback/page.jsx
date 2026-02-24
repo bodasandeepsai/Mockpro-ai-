@@ -16,7 +16,6 @@ import {
     MessageSquare,
     TrendingUp,
     BarChart3,
-    Code,
     FileText
 } from "lucide-react";
 import Link from "next/link";
@@ -331,12 +330,7 @@ export default function Feedback({ params }) {
                                                         <h3 className="text-lg font-medium text-gray-900">
                                                             Question {index + 1}
                                                         </h3>
-                                                        {answer.isCodingQuestion && (
-                                                            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                                                                <Code className="w-3 h-3 mr-1" />
-                                                                Coding
-                                                            </Badge>
-                                                        )}
+
                                                     </div>
                                                     <p className="text-gray-600">{answer.question}</p>
                                                 </div>
@@ -367,15 +361,9 @@ export default function Feedback({ params }) {
                                                         Your Answer
                                                     </h4>
                                                     <div className="p-4 bg-gray-50 rounded-lg border">
-                                                        {answer.isCodingQuestion ? (
-                                                            <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
-                                                                {answer.userAns || 'No code submitted'}
-                                                            </pre>
-                                                        ) : (
-                                                            <p className="text-sm text-gray-800 whitespace-pre-wrap">
-                                                                {answer.userAns || 'No answer provided'}
-                                                            </p>
-                                                        )}
+                                                        <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                                                            {answer.userAns || 'No answer provided'}
+                                                        </p>
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2">
@@ -383,15 +371,9 @@ export default function Feedback({ params }) {
                                                         Expected Answer
                                                     </h4>
                                                     <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                                                        {answer.isCodingQuestion ? (
-                                                            <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
-                                                                {answer.correctAns || 'No solution provided'}
-                                                            </pre>
-                                                        ) : (
-                                                            <p className="text-sm text-gray-800 whitespace-pre-wrap">
-                                                                {answer.correctAns || 'No expected answer provided'}
-                                                            </p>
-                                                        )}
+                                                        <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                                                            {answer.correctAns || 'No expected answer provided'}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -408,42 +390,7 @@ export default function Feedback({ params }) {
                                                 </div>
                                             )}
 
-                                            {/* Test Cases (for coding questions) */}
-                                            {answer.isCodingQuestion && answer.testCases && answer.testCases.length > 0 && (
-                                                <div className="space-y-3">
-                                                    <h4 className="text-sm font-medium text-gray-700">Test Cases</h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                        {answer.testCases.map((testCase, i) => (
-                                                            <div key={i} className="p-3 bg-gray-50 rounded-lg border">
-                                                                <div className="flex items-center gap-2 mb-2">
-                                                                    <span className="text-sm font-medium text-gray-700">
-                                                                        Test Case {i + 1}
-                                                                    </span>
-                                                                    <div className="flex items-center gap-1">
-                                                                        <span className="text-xs text-gray-500">Input:</span>
-                                                                        <code className="text-xs bg-gray-200 px-1 rounded">
-                                                                            {testCase.input}
-                                                                        </code>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="space-y-1">
-                                                                    <div className="flex items-center gap-1">
-                                                                        <span className="text-xs text-gray-500">Expected:</span>
-                                                                        <code className="text-xs bg-green-200 px-1 rounded">
-                                                                            {testCase.output}
-                                                                        </code>
-                                                                    </div>
-                                                                    {testCase.explanation && (
-                                                                        <p className="text-xs text-gray-600">
-                                                                            {testCase.explanation}
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
+
                                         </div>
                                     </CardContent>
                                 </Card>
